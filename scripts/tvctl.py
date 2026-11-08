@@ -28,7 +28,10 @@ import shutil
 import socket
 import subprocess
 import sys
+import re
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -69,6 +72,7 @@ PROFILES = {
         "com.google.android.youtube.tvkids": "YouTube Kids for TV",
         "com.google.android.feedback": "Google feedback reporter",
         "com.google.android.tvtutorials": "TV tutorials",
+        "com.google.android.leanbacklauncher.partnercustomizer": "OEM/sponsored rows injected into the stock home",
     },
     "aggressive": {
         "com.google.android.katniss": "Google Assistant / voice search (mic button stops working)",
@@ -341,6 +345,42 @@ def cmd_install(args) -> None:
     print(adb("install", "-r", str(apk), serial=s, timeout=300))
 
 
+def github_repo() -> str:
+    """owner/repo from this checkout's git remote (or TVCTL_REPO)."""
+    if os.environ.get("TVCTL_REPO"):
+        return os.environ["TVCTL_REPO"]
+    try:
+        url = subprocess.run(["git", "-C", str(ROOT), "remote", "get-url", "origin"],
+                             capture_output=True, text=True).stdout.strip()
+    except OSError:
+        url = ""
+    m = re.search(r"github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?$", url)
+    if not m:
+        die("Can't tell which GitHub repo to download from. Set TVCTL_REPO=owner/cleanyourtv")
+    return f"{m.group(1)}/{m.group(2)}"
+
+
+def cmd_update(args) -> None:
+    """Download the latest launcher APK from GitHub Releases and install it."""
+    repo = github_repo()
+    url = f"https://github.com/{repo}/releases/latest/download/cleanyourtv-launcher.apk"
+    dest = ROOT / "cleanyourtv-launcher.apk"
+    print(f"→ Downloading {url}")
+    try:
+        with urllib.request.urlopen(url, timeout=120) as resp, dest.open("wb") as f:
+            shutil.copyfileobj(resp, f)
+    except urllib.error.HTTPError as e:
+        die(f"Download failed ({e.code}). Has a build finished since the release step was added?\n"
+            f"Check https://github.com/{repo}/releases")
+    except urllib.error.URLError as e:
+        die(f"Download failed: {e.reason}")
+    print(f"✓ Saved {dest.name} ({dest.stat().st_size / 1e6:.1f} MB)")
+    cmd_install(argparse.Namespace(apk=str(dest)))
+    if args.launch:
+        s = serial_or_die()
+        print(shell(s, f"am start -n {LAUNCHER_ACTIVITY}"))
+
+
 def cmd_home(args) -> None:
     s = serial_or_die()
     if LAUNCHER_PKG not in installed_packages(s):
@@ -421,6 +461,10 @@ def main() -> None:
     p.add_argument("apk")
     p.set_defaults(fn=cmd_install)
 
+    p = sub.add_parser("update", help="download the latest launcher from GitHub Releases and install it")
+    p.add_argument("--launch", action="store_true", help="open it on the TV afterwards")
+    p.set_defaults(fn=cmd_update)
+
     p = sub.add_parser("home", help="make CleanYourTV the Home screen")
     p.add_argument("--disable-stock", action="store_true", help="also disable the stock (ad-serving) launcher")
     p.set_defaults(fn=cmd_home)
@@ -435,6 +479,10 @@ def main() -> None:
     p.set_defaults(fn=cmd_setup)
 
     args = ap.parse_args()
+    adb_bin()  # fail fast with install help before scanning
+    me = local_ipv4() or ""
+    if me.startswith("172.20.10."):
+        print("ℹ You're on an iPhone Personal Hotspot (172.20.10.x). The TV must be on the same hotspot.")
     args.fn(args)
 
 

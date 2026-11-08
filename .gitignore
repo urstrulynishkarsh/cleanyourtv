@@ -8,3 +8,4 @@ local.properties
 packages.txt
 removed_packages.txt
 __pycache__/
+*.apk

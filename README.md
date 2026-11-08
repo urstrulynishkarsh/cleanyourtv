@@ -29,20 +29,20 @@ Settings → Device Preferences → About → click **Build** 7× → Developer 
 - **Wireless debugging**: ON (Android 11+). Use `tvctl.py pair <ip:port> <code>` first.
 
 ### 2. Get the APK
-Every push to `main` builds it automatically: **Actions → Build launcher APK → latest run → Artifacts → `cleanyourtv-launcher`**. Unzip it.
-Or open the folder in Android Studio and click Run.
+Every push to `main` builds the APK and publishes it as the latest GitHub Release. `tvctl.py update` downloads and installs it, no login needed.
+You can also open the folder in Android Studio and click Run.
 
 ### 3. Run
 ```bash
 python scripts/tvctl.py connect                 # accept "Allow debugging?" on the TV → Always allow
 python scripts/tvctl.py packages                # optional: saves packages.txt
-python scripts/tvctl.py install app-release.apk
+python scripts/tvctl.py update --launch          # download latest build + install + open
 python scripts/tvctl.py home                    # press Home on the remote and choose CleanYourTV
 python scripts/tvctl.py home --disable-stock    # Google TV ignores the choice? this kills the ad launcher
 python scripts/tvctl.py debloat                 # see the list
 python scripts/tvctl.py debloat --apply         # remove it
 ```
-Or all at once: `python scripts/tvctl.py setup app-release.apk --apply --disable-stock`
+Or all at once: `python scripts/tvctl.py setup cleanyourtv-launcher.apk --apply --disable-stock`
 
 ### Undo
 ```bash
