@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 16:9 TV banner: dark glass tile with a soft "screen" glyph -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path android:fillColor="#FF111114" android:pathData="M0,0h320v180h-320z" />
+    <path android:fillColor="#FF2B2B33" android:pathData="M0,0h320v90h-320z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFF5F5F7"
+        android:strokeWidth="8"
+        android:pathData="M112,50h96a10,10 0,0 1,10 10v52a10,10 0,0 1,-10 10h-96a10,10 0,0 1,-10 -10v-52a10,10 0,0 1,10 -10z" />
+    <path android:fillColor="#FFF5F5F7" android:pathData="M136,134h48v8h-48z" />
+    <path android:fillColor="#FF64D2FF" android:pathData="M150,72l26,14l-26,14z" />
+</vector>
